@@ -114,7 +114,7 @@ class Model_1(NN.Module):
 
         print(fc_out.shape)
         exit()
-        return F.log_softmax(fc_out)
+        return F.log_softmax(fc_out, dim=1)
  
 
 # =============================================================================
