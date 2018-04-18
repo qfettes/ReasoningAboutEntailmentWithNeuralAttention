@@ -112,8 +112,6 @@ class Model_1(NN.Module):
         # Output of Softmax
         fc_out = self.linear4(fc_out)
 
-        print(fc_out.shape)
-        exit()
         return F.log_softmax(fc_out, dim=1)
  
 
@@ -137,7 +135,7 @@ class Model_1(NN.Module):
 #
 class Model_2(NN.Module):
     def __init__(self, use_gpu, lstm_size, hidden_size, drop_out, beta, embedding, class_num):
-        super(Model_1, self).__init__()
+        super(Model_2, self).__init__()
 
         numpy.random.seed(2)
         torch.manual_seed(2)
@@ -184,28 +182,29 @@ class Model_2(NN.Module):
     # Forward propagation
     def forward(self, rep1, len1, mask1, rep2, len2):
     # ----------------- YOUR CODE HERE ----------------------
-        #rep = torch.cat((rep1, rep2), 0)
+        rep = torch.cat((rep1, rep2), 0)
         #length = torch.cat((len1, len2), 0)
 
         # Representation for input sentences
         batch_size = rep1.size()[0]
-        sents_premise = self.embedding(rep1)
-        sents_hypothesis = self.embedding(rep2)
+        sents = self.embedding(rep)
+        (sents_premise, sents_hypothesis) = torch.split(sents, batch_size)
 
         # (sequence length * batch size * feature size)
         sents_premise = sents_premise.transpose(1, 0)
         sents_hypothesis = sents_hypothesis.transpose(1, 0)
 
         # Initialize hidden states and cell states
-        hidden = self.init_hidden(batch_size)
+        (hx, cx) = self.init_hidden(batch_size)
+        hx = hx.view(batch_size, -1)
+        cx = cx.view(batch_size, -1)
+        hidden = (hx, cx)
         hidden_hypothesis = self.init_hidden(batch_size)
 
         # Ouput of LSTM: sequence (length x mini batch x lstm size)
         outp = []
-        for i, inp in enumerate(sents_premise.chunk(sents_premise.size(0), dim=0)):
-            print(sents_premise)
-            exit()
-            hidden = self.lstm1(inp, hidden)
+        for inp in range(sents_premise.size(0)):
+            hidden = self.lstm1(sents_premise[inp], hidden)
             outp += [hidden[1]]
             
         outp = torch.stack(outp).squeeze(dim=1).transpose(1, 0)
@@ -227,7 +226,7 @@ class Model_2(NN.Module):
         # Output of Softmax
         fc_out = self.linear4(fc_out)
 
-        return F.log_softmax(fc_out)
+        return F.log_softmax(fc_out, dim=1)
     # -------------------------------------------------------
  
 
