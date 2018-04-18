@@ -1,2 +1,3 @@
 ./hw05/data/*
 ./hw05/snli/*
+./hw05/pytorch/__pycache__/*
