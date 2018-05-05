@@ -203,18 +203,27 @@ class Model_2(NN.Module):
 
         # Ouput of LSTM: sequence (length x mini batch x lstm size)
         outp = []
+        hidden_states = []
         for inp in range(sents_premise.size(0)):
             hidden = self.lstm1(sents_premise[inp], hidden)
-            outp += [hidden[1]]
+            outp += [hidden[0]]
+            hidden_states += [hidden[1]]
             
-        outp = torch.stack(outp).squeeze(dim=1).transpose(1, 0)
+        outp = torch.stack(outp).transpose(0, 1)
         len1 = (len1-1).view(-1, 1, 1).expand(outp.size(0), 1, outp.size(2))
         out = torch.gather(outp, 1, len1).transpose(1, 0)
-        
-        lstm_outs, hidden_hypothesis = self.lstm2(sents_hypothesis, (hidden_hypothesis[0], out))
 
-        # (batch size * sequence length * feature size)
-        lstm_out = hidden_hypothesis[1].squeeze(0)
+        hidden_states = torch.stack(hidden_states).transpose(0, 1)
+        #len1 = (len1-1).view(-1, 1, 1).expand(hidden_states.size(0), 1, hidden_states.size(2))
+        hidden_state = torch.gather(hidden_states, 1, len1).transpose(1, 0)
+        
+        lstm_outs, hidden_hypothesis = self.lstm2(sents_hypothesis, (hidden_state, out))
+        lstm_outs = lstm_outs.transpose(0, 1)
+
+        len2 = (len2-1).view(-1, 1, 1).expand(lstm_outs.size(0), 1, lstm_outs.size(2))
+        lstm_out = torch.gather(lstm_outs, 1, len2)
+        lstm_out = lstm_out.view(lstm_out.size(0), -1)
+        
         # Concatenate premise and hypothesis representations
         lstm_out = F.dropout(lstm_out, p=self.drop_out)
 
@@ -369,6 +378,68 @@ class Model_3(NN.Module):
         # compute the final representation of the sentence pair,
         # and run it through the fully connected layer, then 
         # through the softmax layer.
+        rep = torch.cat((rep1, rep2), 0)
+        #length = torch.cat((len1, len2), 0)
+
+        # Representation for input sentences
+        batch_size = rep1.size()[0]
+        sents = self.embedding(rep)
+        (sents_premise, sents_hypothesis) = torch.split(sents, batch_size)
+
+        # (sequence length * batch size * feature size)
+        sents_premise = sents_premise.transpose(1, 0)
+        sents_hypothesis = sents_hypothesis.transpose(1, 0)
+
+        # Initialize hidden states and cell states
+        (hx, cx) = self.init_hidden(batch_size)
+        hx = hx.view(batch_size, -1)
+        cx = cx.view(batch_size, -1)
+        hidden = (hx, cx)
+        
+        # Ouput of LSTM: sequence (length x mini batch x lstm size)
+        outp = []
+        hidden_states = []
+        for inp in range(sents_premise.size(0)):
+            hidden = self.lstm1(sents_premise[inp], hidden)
+            outp += [hidden[0]]
+            hidden_states += [hidden[1]]
+            
+        outp = torch.stack(outp).transpose(0, 1)
+        len1 = (len1-1).view(-1, 1, 1).expand(outp.size(0), 1, outp.size(2))
+        out = torch.gather(outp, 1, len1).transpose(1, 0)
+
+        hidden_states = torch.stack(hidden_states).transpose(0, 1)
+        #len1 = (len1-1).view(-1, 1, 1).expand(hidden_states.size(0), 1, hidden_states.size(2))
+        hidden_state = torch.gather(hidden_states, 1, len1).transpose(1, 0)
+        
+        lstm_outs, hidden_hypothesis = self.lstm2(sents_hypothesis, (hidden_state, out))
+        lstm_outs = lstm_outs.transpose(0, 1)
+
+        len2 = (len2-1).view(-1, 1, 1).expand(lstm_outs.size(0), 1, lstm_outs.size(2))
+        lstm_out = torch.gather(lstm_outs, 1, len2)
+        lstm_out = lstm_out.view(lstm_out.size(0), -1)
+
+
+        #############################################
+        outputs_1 = lstm_outs
+        max_seq_len = rep1.size()[1]
+        WyY = torch.matmul(outputs_1, self.Wy)
+        context_vec = context_vector(lstm_out)
+        final = torch.tanh(torch.matmul(context_vec, self.Wp) + torch.matmul(lstm_out, self.Wh))
+        #############################################
+        
+        # Concatenate premise and hypothesis representations
+        final = F.dropout(final, p=self.drop_out)
+
+        # Output of fully connected layers 
+        fc_out = F.dropout(F.tanh(self.linear1(lstm_out)), p=self.drop_out)
+        #fc_out = F.dropout(F.tanh(self.linear2(fc_out)), p=self.drop_out)
+        #fc_out = F.dropout(F.tanh(self.linear3(fc_out)), p=self.drop_out)
+
+        # Output of Softmax
+        fc_out = self.linear2(fc_out)
+
+        return F.log_softmax(fc_out, dim=1)
 
 
 
