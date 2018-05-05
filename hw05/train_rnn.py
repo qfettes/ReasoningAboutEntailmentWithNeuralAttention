@@ -217,7 +217,7 @@ class Model_2(NN.Module):
         #len1 = (len1-1).view(-1, 1, 1).expand(hidden_states.size(0), 1, hidden_states.size(2))
         hidden_state = torch.gather(hidden_states, 1, len1).transpose(1, 0)
         
-        lstm_outs, hidden_hypothesis = self.lstm2(sents_hypothesis, (hidden_state, out))
+        lstm_outs, hidden_hypothesis = self.lstm2(sents_hypothesis, (out, hidden_state))
         lstm_outs = lstm_outs.transpose(0, 1)
 
         len2 = (len2-1).view(-1, 1, 1).expand(lstm_outs.size(0), 1, lstm_outs.size(2))
@@ -412,7 +412,7 @@ class Model_3(NN.Module):
         #len1 = (len1-1).view(-1, 1, 1).expand(hidden_states.size(0), 1, hidden_states.size(2))
         hidden_state = torch.gather(hidden_states, 1, len1).transpose(1, 0)
         
-        lstm_outs, hidden_hypothesis = self.lstm2(sents_hypothesis, (hidden_state, out))
+        lstm_outs, hidden_hypothesis = self.lstm2(sents_hypothesis, (out, hidden_state))
         lstm_outs = lstm_outs.transpose(0, 1)
 
         len2 = (len2-1).view(-1, 1, 1).expand(lstm_outs.size(0), 1, lstm_outs.size(2))
