@@ -1,3 +1,18 @@
+<<<<<<< HEAD
+hw05/snli/GoogleNews-vectors-negative300.bin
+hw05/snli/snli_1.0/.DS_Store
+hw05/snli/snli_1.0/Icon
+hw05/snli/snli_1.0/README.txt
+hw05/snli/snli_1.0/snli_1.0_dev.jsonl
+hw05/snli/snli_1.0/snli_1.0_dev.txt
+hw05/snli/snli_1.0/snli_1.0_test.jsonl
+hw05/snli/snli_1.0/snli_1.0_test.txt
+hw05/snli/snli_1.0/snli_1.0_train.jsonl
+hw05/snli/snli_1.0/snli_1.0_train.txt
+hw05/data/embedding.pkl
+hw05/data/snli_padding.pkl
+=======
 ./hw05/data/*
 ./hw05/snli/*
 ./hw05/pytorch/__pycache__/*
+>>>>>>> ce483cc887525986572abfef939657738195440d
